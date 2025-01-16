@@ -60,6 +60,17 @@ var clock = new THREE.Clock()
 var delta = clock.getDelta();
 
 
+var startBtn = document.getElementById("start-btn");
+
+startBtn.addEventListener("click",function(){
+
+    goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
+    this.style.display = "none"
+
+    
+})
+
+
 
 
 var nextBtn = document.getElementById("next-btn");
@@ -216,7 +227,7 @@ document.addEventListener("keydown", function(e){
 
   if(e.key=="s"){
 
-    goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
+    //goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
   }
 });
 
