@@ -29,7 +29,7 @@ controls.target.set(-1, 1, 1);;
 
 //spotlight
 
-const spotLight = new THREE.SpotLight(0xffffff,1,5,0.5,1,0,4); // White light, intensity 1
+const spotLight = new THREE.SpotLight(0xffffff,0.75,5,0.5,1,0,4); // White light, intensity 1
 spotLight.position.set(-5, 4, -3); // Position the spotlight
 
 scene.add(spotLight);
@@ -100,9 +100,9 @@ new RGBELoader()
     //scene1.background = texture;
     scene.background = new THREE.Color( "rgb(1,22,45)" );
     scene.environment = texture;
-    //scene.environment.rotation = 180
+    scene.environmentRotation = 0.2
     //scene.environment.intensity = 0.1;
-    console.log(scene.environment)
+    console.log(scene.environmentRotation)
 
 });
 
