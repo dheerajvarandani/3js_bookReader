@@ -6,6 +6,8 @@ import { RGBELoader } from './three/RGBELoader.js';
 
 import {Tween,Easing} from './tween/tween.esm.js'
 
+let loadingDiv = document.getElementById('loadingDiv');
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const container = document.getElementById("threejscanvas")
@@ -119,7 +121,12 @@ new RGBELoader()
 
 var loadingManager = new THREE.LoadingManager();
 
+loadingManager.onLoad = function(){
 
+  //console.log("loaded")
+  loadingDiv.style.display = "none";
+
+}
 
 
 const loader = new GLTFLoader(loadingManager);
