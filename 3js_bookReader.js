@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from "./three/GLTFLoader.js";
 import { OrbitControls } from './three/OrbitControls.js';
 import { RGBELoader } from './three/RGBELoader.js';
+import { RectAreaLightHelper } from './three//RectAreaLightHelper.js';
 
 import {Tween,Easing} from './tween/tween.esm.js'
 
@@ -26,15 +27,22 @@ camera.position.x = -1;
 camera.position.y = 1;
 camera.position.z = 4;
 
-controls.target.set(-1, 1, 1);;
-//controls.update();
+controls.target.set(-1, 1, 1);
+
+controls.enableDamping = true;
+controls.dampingFactor = 0.02;
+controls.maxDistance = 5;
+controls.maxPolarAngle = 1;
+controls.maxAzimuthAngle = 1
+controls.minAzimuthAngle = -1
+
 
 //spotlight
 
-const spotLight = new THREE.SpotLight(0xffffff,0.75,5,0.5,1,0,4); // White light, intensity 1
+const spotLight = new THREE.SpotLight(0xffffff,0.5,5,0.5,1,0,4); // White light, intensity 1
 spotLight.position.set(-5, 4, -3); // Position the spotlight
 
-scene.add(spotLight);
+//scene.add(spotLight);
 
 spotLight.castShadow = true;
 
@@ -48,8 +56,16 @@ spotLight.target = spotLightTarget;
 const spotLightHelper = new THREE.SpotLightHelper(spotLight);
 //scene.add(spotLightHelper);
 
-const light2 = new THREE.HemisphereLight( 0xffffbb, 0x080820, 0);
-scene.add( light2 );     
+const width = 7;
+const height = 5;
+const intensity = 20;
+const rectLight = new THREE.RectAreaLight( 0xffffff, intensity,  width, height );
+rectLight.position.set( -1, 5, -10.5 );
+rectLight.lookAt( 0, 5, 0 );
+scene.add( rectLight )
+
+const helper = new RectAreaLightHelper( rectLight );
+//rectLight.add( helper ); // helper must be added as a child of the light
 
 let bookScene;
 let bookAnim;
@@ -106,7 +122,10 @@ function mapPagesNext(sheetNum){
   textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".jpg", function(tex){tex.flipY=false; page1.map = tex})
   textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".jpg", function(tex){
     
-    tex.flipY=false; page2.map = tex;
+    tex.flipY=false; 
+    //tex.minFilter = THREE.NearestFilter;
+    //tex.magFilter = THREE.NearestFilter;
+    page2.map = tex;
     
     flipNextAnim()
   
@@ -129,7 +148,10 @@ function mapPagesPrevious(sheetNum){
   textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".jpg", function(tex){tex.flipY=false; page1.map = tex})
   textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".jpg", function(tex){
     
-    tex.flipY=false; page2.map = tex;
+    tex.flipY=false; 
+    page2.map = tex;
+
+    
     
     flipPreviousAnim()
   
@@ -254,8 +276,7 @@ new RGBELoader()
     //scene1.background = texture;
     scene.background = new THREE.Color( "rgb(1,22,45)" );
     scene.environment = texture;
-    scene.environmentRotation = 0.2
-    //scene.environment.intensity = 0.1;
+    
 
 
 });
@@ -383,6 +404,7 @@ document.addEventListener("keydown", function(e){
 
 function animate(time) {
     requestAnimationFrame( animate );
+    controls.update();
 
     if (mixer) {
         mixer.update(0.01); // Update animation with time delta
@@ -396,9 +418,9 @@ function animate(time) {
 
 
 
-
-
+    renderer.getmax
     renderer.render( scene, camera );
+    
 
 }
 animate();
