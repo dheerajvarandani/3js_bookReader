@@ -154,6 +154,7 @@ function flipNextAnim(){
 
   console.log(currentSheet + (currentSheet - 2))
   console.log(currentSheet + (currentSheet - 1))
+
   
 }
 
@@ -209,21 +210,18 @@ previousBtn.addEventListener("click",function(){
 })
 
 
-function goToSheet(sheetNum){
+function goToPage(pageNum){
 
+  var sheetNum = (pageNum + 1) / 2;
 
+  console.log(sheetNum)
 
-  for(var i = currentSheet; i < sheetNum; i++){
-
-    mixer.clipAction(bookAnim[i]).loop = THREE.LoopOnce ; 
-    mixer.clipAction(bookAnim[i]).clampWhenFinished = true;
-    mixer.clipAction(bookAnim[i]).play()
-    
+  if(sheetNum > currentSheet){
+    mapPagesNext(sheetNum)
   }
-
-  mixer.clipAction(bookAnim[sheetNum]).loop = THREE.LoopOnce ; 
-  mixer.clipAction(bookAnim[sheetNum]).clampWhenFinished = true;
-  mixer.clipAction(bookAnim[sheetNum]).play();
+  else{
+    mapPagesPrevious(sheetNum)
+  }
 
   currentSheet = sheetNum;
 
@@ -234,7 +232,8 @@ var goToBtn = document.getElementById("go-to-btn");
 var sheetNumInput = document.getElementById("sheet-num-input");
 goToBtn.addEventListener("click", function(){
 
-  goToSheet(sheetNumInput.value)
+  var pageNum = parseInt(sheetNumInput.value)
+  goToPage(pageNum)
 
 
 })
