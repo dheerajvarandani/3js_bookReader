@@ -14,7 +14,7 @@ const container = document.getElementById("threejscanvas")
 
 
 
-const renderer = new THREE.WebGLRenderer({canvas: container});
+const renderer = new THREE.WebGLRenderer({canvas: container, antialias: true});
 renderer.setSize( container.clientWidth, container.clientHeight );
 
 //document.body.appendChild( renderer.domElement );'
@@ -54,7 +54,16 @@ scene.add( light2 );
 let bookScene;
 let bookAnim;
 let mixer;
-let labels = [];
+
+var page0
+var page1
+var page2
+var page3
+let textureLoader = new THREE.TextureLoader();
+
+
+let currentSheet = 1;
+let MAX_SHEETS = 150;
 
 
 
@@ -73,16 +82,107 @@ startBtn.addEventListener("click",function(){
 })
 
 
+function padNum(num){
+
+  return(String(num).padStart(3, '0'));
+
+}
+
+
+
+
+
+function mapPagesNext(sheetNum){
+
+  /*
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".jpg", function(tex){ tex.flipY=false; page3.map = tex})
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".jpg", function(tex){tex.flipY=false; page1.map = tex})
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".jpg", function(tex){tex.flipY=false; page2.map = tex})
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".jpg", function(tex){tex.flipY=false; page0.map = tex})
+  */
+
+ 
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".jpg", function(tex){ tex.flipY=false; page3.map = tex})  
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".jpg", function(tex){tex.flipY=false; page1.map = tex})
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".jpg", function(tex){
+    
+    tex.flipY=false; page2.map = tex;
+    
+    flipNextAnim()
+  
+  })
+
+
+
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".jpg", function(tex){tex.flipY=false; page0.map = tex})
+
+}
+
+
+function mapPagesPrevious(sheetNum){
+
+
+  
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".jpg", function(tex){tex.flipY=false; page0.map = tex})
+ 
+  
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".jpg", function(tex){tex.flipY=false; page1.map = tex})
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".jpg", function(tex){
+    
+    tex.flipY=false; page2.map = tex;
+    
+    flipPreviousAnim()
+  
+  })
+
+
+  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".jpg", function(tex){ tex.flipY=false; page3.map = tex})
+
+
+  
+
+}
+
+
+function flipNextAnim(){
+
+  mixer.clipAction(bookAnim[1]).stop();  
+  mixer.clipAction(bookAnim[0]).reset();  
+  mixer.clipAction(bookAnim[0]).loop = THREE.LoopOnce ; 
+  mixer.clipAction(bookAnim[0]).clampWhenFinished = true;
+  mixer.clipAction(bookAnim[0]).play();
+
+  console.log(currentSheet + (currentSheet - 2))
+  console.log(currentSheet + (currentSheet - 1))
+  
+}
+
+
+function flipPreviousAnim(){
+
+  
+  mixer.clipAction(bookAnim[0]).stop();  
+  mixer.clipAction(bookAnim[1]).reset();  
+  mixer.clipAction(bookAnim[1]).loop = THREE.LoopOnce ; 
+  mixer.clipAction(bookAnim[1]).clampWhenFinished = true;
+  mixer.clipAction(bookAnim[1]).play(); 
+
+  console.log(currentSheet + (currentSheet - 2))
+  console.log(currentSheet + (currentSheet - 1))
+    
+
+
+}
 
 
 var nextBtn = document.getElementById("next-btn");
 
 nextBtn.addEventListener("click",function(){
 
-    mixer.clipAction(bookAnim[1]).stop(); 
-    mixer.clipAction(bookAnim[0]).loop = THREE.LoopOnce ; 
-    mixer.clipAction(bookAnim[0]).clampWhenFinished = true;
-    mixer.clipAction(bookAnim[0]).play(); 
+    currentSheet--;
+    mapPagesPrevious(currentSheet);
+
+    
 
 })
 
@@ -90,10 +190,52 @@ var previousBtn = document.getElementById("previous-btn");
 
 previousBtn.addEventListener("click",function(){
 
-    mixer.clipAction(bookAnim[0]).stop(); 
-    mixer.clipAction(bookAnim[1]).loop = THREE.LoopOnce ; 
-    mixer.clipAction(bookAnim[1]).clampWhenFinished = true;
-    mixer.clipAction(bookAnim[1]).play(); 
+
+  if(currentSheet < MAX_SHEETS){
+
+
+    mapPagesNext(currentSheet);
+
+
+
+
+  }
+  else{
+    console.log("max sheets reached")
+  }
+
+    currentSheet++;
+
+})
+
+
+function goToSheet(sheetNum){
+
+
+
+  for(var i = currentSheet; i < sheetNum; i++){
+
+    mixer.clipAction(bookAnim[i]).loop = THREE.LoopOnce ; 
+    mixer.clipAction(bookAnim[i]).clampWhenFinished = true;
+    mixer.clipAction(bookAnim[i]).play()
+    
+  }
+
+  mixer.clipAction(bookAnim[sheetNum]).loop = THREE.LoopOnce ; 
+  mixer.clipAction(bookAnim[sheetNum]).clampWhenFinished = true;
+  mixer.clipAction(bookAnim[sheetNum]).play();
+
+  currentSheet = sheetNum;
+
+}
+
+
+var goToBtn = document.getElementById("go-to-btn");
+var sheetNumInput = document.getElementById("sheet-num-input");
+goToBtn.addEventListener("click", function(){
+
+  goToSheet(sheetNumInput.value)
+
 
 })
 
@@ -115,7 +257,7 @@ new RGBELoader()
     scene.environment = texture;
     scene.environmentRotation = 0.2
     //scene.environment.intensity = 0.1;
-    console.log(scene.environmentRotation)
+
 
 });
 
@@ -132,7 +274,7 @@ loadingManager.onLoad = function(){
 const loader = new GLTFLoader(loadingManager);
 loader.load(
 // resource URL
-'./assets/book_flip.glb',
+'./assets/book_flip.gltf',
 //'https://storage.googleapis.com/dheerajv-bucket/images/aorta.glb',
 // called when the resource is loaded
 function ( gltf ) {
@@ -142,13 +284,13 @@ function ( gltf ) {
     bookAnim = gltf.animations;
     scene.add( bookScene);
 
-    console.log(bookAnim)
 
     mixer = new THREE.AnimationMixer(bookScene);
 
-
-
-
+    page0 = bookScene.getObjectByName("page_0").material
+    page1 = bookScene.getObjectByName("page_1").children[2].material
+    page2 = bookScene.getObjectByName("page_1").children[1].material
+    page3 = bookScene.getObjectByName("page_2").material
 
 });
 
@@ -191,7 +333,7 @@ function goToCamera(eye,target){
 
     //target
   var from_target = {
-    x: controls.target.x,
+    x: controls.target.x, 
     y: controls.target.y,
     z: controls.target.z
   };
