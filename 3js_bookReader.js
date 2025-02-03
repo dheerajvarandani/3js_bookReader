@@ -29,20 +29,26 @@ camera.position.z = 4;
 
 controls.target.set(-1, 1, 1);
 
+
+
 controls.enableDamping = true;
 controls.dampingFactor = 0.02;
+controls.rotateSpeed = 0.1
 controls.maxDistance = 5;
-controls.maxPolarAngle = 1;
+controls.maxPolarAngle = 1.1;
 controls.maxAzimuthAngle = 1
 controls.minAzimuthAngle = -1
 
 
+
+
 //spotlight
 
-const spotLight = new THREE.SpotLight(0xffffff,0.5,5,0.5,1,0,4); // White light, intensity 1
+const spotLight = new THREE.SpotLight("#FFE4BD",0.3,5,0.5,0.2,0,0); // White light, intensity 1
+
 spotLight.position.set(-5, 4, -3); // Position the spotlight
 
-//scene.add(spotLight);
+scene.add(spotLight);
 
 spotLight.castShadow = true;
 
@@ -56,11 +62,11 @@ spotLight.target = spotLightTarget;
 const spotLightHelper = new THREE.SpotLightHelper(spotLight);
 //scene.add(spotLightHelper);
 
-const width = 7;
+const width = 20;
 const height = 5;
-const intensity = 20;
-const rectLight = new THREE.RectAreaLight( 0xffffff, intensity,  width, height );
-rectLight.position.set( -1, 5, -10.5 );
+const intensity = 5;
+const rectLight = new THREE.RectAreaLight( "#FFE4BD", intensity,  width, height );
+rectLight.position.set( -0.4, 5, -10 );
 rectLight.lookAt( 0, 5, 0 );
 scene.add( rectLight )
 
@@ -93,6 +99,9 @@ startBtn.addEventListener("click",function(){
 
     goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
     this.style.display = "none"
+
+    var rainAudio = document.getElementById("rain-audio");
+    rainAudio.play();
 
     
 })
@@ -265,21 +274,26 @@ goToBtn.addEventListener("click", function(){
 // ---------------------------------------------------------------------
 new RGBELoader()
 .setPath('./assets/')
-.load('blue_photo_studio_2k.hdr', function (texture) {
+.load('studio_small_02_2k.hdr', function (texture) {
 
     
     texture.mapping = THREE.EquirectangularReflectionMapping;
 
-    
-
-    
-    //scene1.background = texture;
-    scene.background = new THREE.Color( "rgb(1,22,45)" );
     scene.environment = texture;
-    
-
+ 
 
 });
+
+var backgroundSphere = new THREE.Mesh(
+  new THREE.SphereGeometry(40,20,20),
+  new THREE.MeshBasicMaterial({
+      map: (new THREE.TextureLoader).load("./assets/city_panorama.jpg"),
+      side:THREE.DoubleSide
+  })
+);
+backgroundSphere.position.set(0,4,0)
+backgroundSphere.rotation.set(0,5,0)
+scene.add(backgroundSphere)
 
 var loadingManager = new THREE.LoadingManager();
 
@@ -303,6 +317,12 @@ function ( gltf ) {
     bookScene = gltf.scene;
     bookAnim = gltf.animations;
     scene.add( bookScene);
+
+    
+    bookScene.getObjectByName("Bulb").material.emissive = new THREE.Color().setRGB( 1, 1, 1 );
+    bookScene.getObjectByName("Bulb").material.emissiveIntensity = 5;
+
+
 
 
     mixer = new THREE.AnimationMixer(bookScene);
@@ -399,6 +419,21 @@ document.addEventListener("keydown", function(e){
     //goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
   }
 });
+
+
+
+//////////////////////////////
+window.addEventListener('resize', function()
+
+{
+var width = window.innerWidth;
+var height = window.innerHeight;
+renderer.setSize( width, height );
+camera.aspect = width / height;
+camera.updateProjectionMatrix();
+} );
+
+
 
 
 
