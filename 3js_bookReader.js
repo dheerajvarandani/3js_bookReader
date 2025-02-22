@@ -340,7 +340,7 @@ loadingManager.onLoad = function(){
 const loader = new GLTFLoader(loadingManager);
 loader.load(
 // resource URL
-'./assets/book_flip2.gltf',
+'./assets/book_flip.gltf',
 //'https://storage.googleapis.com/dheerajv-bucket/images/aorta.glb',
 // called when the resource is loaded
 function ( gltf ) {
