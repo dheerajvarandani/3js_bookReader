@@ -24,8 +24,8 @@ renderer.setSize( container.clientWidth, container.clientHeight );
 const controls = new OrbitControls( camera, renderer.domElement );
 
 camera.position.x = -1;
-camera.position.y = 1;
-camera.position.z = 4;
+camera.position.y = 2.25;
+camera.position.z = 6;
 
 controls.target.set(-1, 1, 1);
 
@@ -34,10 +34,13 @@ controls.target.set(-1, 1, 1);
 controls.enableDamping = true;
 controls.dampingFactor = 0.02;
 controls.rotateSpeed = 0.1
+
+/*
 controls.maxDistance = 5;
 controls.maxPolarAngle = 1.1;
 controls.maxAzimuthAngle = 1
 controls.minAzimuthAngle = -1
+*/
 
 
 
@@ -48,14 +51,14 @@ const spotLight = new THREE.SpotLight("#FFE4BD",0.3,5,0.5,0.2,0,0); // White lig
 
 spotLight.position.set(-5, 4, -3); // Position the spotlight
 
-scene.add(spotLight);
+//scene.add(spotLight);
 
 spotLight.castShadow = true;
 
 // Target for the spotlight
 const spotLightTarget = new THREE.Object3D();
 spotLightTarget.position.set(0, 0, 0); // Point the spotlight at the origin
-scene.add(spotLightTarget);
+//scene.add(spotLightTarget);
 spotLight.target = spotLightTarget;
 
 // Add a helper to visualize the spotlight
@@ -63,15 +66,33 @@ const spotLightHelper = new THREE.SpotLightHelper(spotLight);
 //scene.add(spotLightHelper);
 
 const width = 20;
-const height = 5;
+const height = 20;
 const intensity = 5;
-const rectLight = new THREE.RectAreaLight( "#FFE4BD", intensity,  width, height );
-rectLight.position.set( -0.4, 5, -10 );
+const rectLight = new THREE.RectAreaLight( "#FFFFFF", intensity,  width, height );
+rectLight.position.set( -0.4, 5, -12 );
 rectLight.lookAt( 0, 5, 0 );
+rectLight.castShadow = true;
+
 scene.add( rectLight )
+
+
 
 const helper = new RectAreaLightHelper( rectLight );
 //rectLight.add( helper ); // helper must be added as a child of the light
+
+
+// Add spotlight
+const spotLight2 = new THREE.SpotLight("#FFFFFF", intensity);
+spotLight2.position.set(-0.4, 5, -20);
+spotLight2.target.position.set(0, 5, 0);
+spotLight2.castShadow = true;
+
+//scene.add(spotLight2);
+scene.add(spotLight2.target);
+
+// Optional: Add a helper to visualize the spotlight
+const spotLightHelper2 = new THREE.SpotLightHelper(spotLight2);
+//scene.add(spotLightHelper2);
 
 let bookScene;
 let bookAnim;
@@ -99,6 +120,11 @@ startBtn.addEventListener("click",function(){
 
     goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
     this.style.display = "none"
+
+
+    mixer.clipAction(bookAnim[2]).loop = THREE.LoopOnce ; 
+    mixer.clipAction(bookAnim[2]).clampWhenFinished = true;
+    mixer.clipAction(bookAnim[2]).play();
 
     var rainAudio = document.getElementById("rain-audio");
     rainAudio.play();
@@ -177,6 +203,7 @@ function mapPagesPrevious(sheetNum){
 
 function flipNextAnim(){
 
+  mixer.clipAction(bookAnim[2]).stop();  
   mixer.clipAction(bookAnim[1]).stop();  
   mixer.clipAction(bookAnim[0]).reset();  
   mixer.clipAction(bookAnim[0]).loop = THREE.LoopOnce ; 
@@ -192,7 +219,7 @@ function flipNextAnim(){
 
 function flipPreviousAnim(){
 
-  
+  mixer.clipAction(bookAnim[2]).stop();
   mixer.clipAction(bookAnim[0]).stop();  
   mixer.clipAction(bookAnim[1]).reset();  
   mixer.clipAction(bookAnim[1]).loop = THREE.LoopOnce ; 
@@ -274,12 +301,16 @@ goToBtn.addEventListener("click", function(){
 // ---------------------------------------------------------------------
 new RGBELoader()
 .setPath('./assets/')
-.load('studio_small_02_2k.hdr', function (texture) {
+.load('brown_photostudio_01_2k.hdr', function (texture) {
 
     
     texture.mapping = THREE.EquirectangularReflectionMapping;
 
     scene.environment = texture;
+    //scene.background = texture;
+    //scene.environmentRotation = (new THREE.Euler(0, 0.14, 0));
+    //scene.backgroundRotation = (new THREE.Euler(0, 0.14, 0));
+
  
 
 });
@@ -287,13 +318,14 @@ new RGBELoader()
 var backgroundSphere = new THREE.Mesh(
   new THREE.SphereGeometry(40,20,20),
   new THREE.MeshBasicMaterial({
-      map: (new THREE.TextureLoader).load("./assets/city_panorama.jpg"),
+      map: (new THREE.TextureLoader).load("./assets/new-york-city-skyline2.jpg"),
       side:THREE.DoubleSide
   })
 );
-backgroundSphere.position.set(0,4,0)
-backgroundSphere.rotation.set(0,5,0)
-scene.add(backgroundSphere)
+backgroundSphere.position.set(0,8,0)
+backgroundSphere.rotation.set(0,9.75,0)
+backgroundSphere.scale.set(2,2,2)
+
 
 var loadingManager = new THREE.LoadingManager();
 
@@ -308,7 +340,7 @@ loadingManager.onLoad = function(){
 const loader = new GLTFLoader(loadingManager);
 loader.load(
 // resource URL
-'./assets/book_flip.gltf',
+'./assets/book_flip2.gltf',
 //'https://storage.googleapis.com/dheerajv-bucket/images/aorta.glb',
 // called when the resource is loaded
 function ( gltf ) {
@@ -316,6 +348,7 @@ function ( gltf ) {
 
     bookScene = gltf.scene;
     bookAnim = gltf.animations;
+    console.log(bookAnim)
     scene.add( bookScene);
 
     
@@ -331,6 +364,8 @@ function ( gltf ) {
     page1 = bookScene.getObjectByName("page_1").children[2].material
     page2 = bookScene.getObjectByName("page_1").children[1].material
     page3 = bookScene.getObjectByName("page_2").material
+
+    scene.add(backgroundSphere)
 
 });
 
