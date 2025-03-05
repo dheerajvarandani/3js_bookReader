@@ -68,7 +68,7 @@ const spotLightHelper = new THREE.SpotLightHelper(spotLight);
 const width = 20;
 const height = 20;
 const intensity = 5;
-const rectLight = new THREE.RectAreaLight( "#FFFFFF", intensity,  width, height );
+const rectLight = new THREE.RectAreaLight( "#D2E5F6", intensity,  width, height );
 rectLight.position.set( -0.4, 5, -12 );
 rectLight.lookAt( 0, 5, 0 );
 rectLight.castShadow = true;
@@ -318,13 +318,13 @@ new RGBELoader()
 var backgroundSphere = new THREE.Mesh(
   new THREE.SphereGeometry(40,20,20),
   new THREE.MeshBasicMaterial({
-      map: (new THREE.TextureLoader).load("./assets/new-york-city-skyline2.jpg"),
+      map: (new THREE.TextureLoader).load("./assets/360_skyscraper.png"),
       side:THREE.DoubleSide
   })
 );
 backgroundSphere.position.set(0,8,0)
-backgroundSphere.rotation.set(0,9.75,0)
-backgroundSphere.scale.set(2,2,2)
+backgroundSphere.rotation.set(0,-4.2,0)
+backgroundSphere.scale.set(20,20,20)
 
 
 var loadingManager = new THREE.LoadingManager();
