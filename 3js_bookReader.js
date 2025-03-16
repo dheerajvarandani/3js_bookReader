@@ -47,11 +47,11 @@ controls.minAzimuthAngle = -1
 
 //spotlight
 
-const spotLight = new THREE.SpotLight("#FFE4BD",0.3,5,0.5,0.2,0,0); // White light, intensity 1
+const spotLight = new THREE.SpotLight("#FFFFFF",1,5,0.5,0.2,0,0); // White light, intensity 1
 
 spotLight.position.set(-5, 4, -3); // Position the spotlight
 
-//scene.add(spotLight);
+scene.add(spotLight);
 
 spotLight.castShadow = true;
 
@@ -67,8 +67,8 @@ const spotLightHelper = new THREE.SpotLightHelper(spotLight);
 
 const width = 20;
 const height = 20;
-const intensity = 5;
-const rectLight = new THREE.RectAreaLight( "#D2E5F6", intensity,  width, height );
+const intensity = 3;
+const rectLight = new THREE.RectAreaLight( "#f0a344", intensity,  width, height );
 rectLight.position.set( -0.4, 5, -12 );
 rectLight.lookAt( 0, 5, 0 );
 rectLight.castShadow = true;
@@ -76,8 +76,16 @@ rectLight.castShadow = true;
 scene.add( rectLight )
 
 
+const rectLight_back = new THREE.RectAreaLight( "#f0a344", 1,  40, height );
+rectLight_back.position.set( -0.4, 5, 12 );
+rectLight_back.lookAt( 0, 5, 0 );
+rectLight_back.castShadow = true;
 
-const helper = new RectAreaLightHelper( rectLight );
+scene.add( rectLight_back )
+
+
+
+const helper = new RectAreaLightHelper( rectLight_back );
 //rectLight.add( helper ); // helper must be added as a child of the light
 
 
@@ -318,12 +326,12 @@ new RGBELoader()
 var backgroundSphere = new THREE.Mesh(
   new THREE.SphereGeometry(40,20,20),
   new THREE.MeshBasicMaterial({
-      map: (new THREE.TextureLoader).load("./assets/360_skyscraper.png"),
+      map: (new THREE.TextureLoader).load("./assets/riyadh360_3.jpg"),
       side:THREE.DoubleSide
   })
 );
-backgroundSphere.position.set(0,8,0)
-backgroundSphere.rotation.set(0,-4.2,0)
+backgroundSphere.position.set(0,-175,0)
+backgroundSphere.rotation.set(0,-4.8,0)
 backgroundSphere.scale.set(20,20,20)
 
 
