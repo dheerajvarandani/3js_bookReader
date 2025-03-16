@@ -153,17 +153,11 @@ function padNum(num){
 
 function mapPagesNext(sheetNum){
 
-  /*
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".jpg", function(tex){ tex.flipY=false; page3.map = tex})
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".jpg", function(tex){tex.flipY=false; page1.map = tex})
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".jpg", function(tex){tex.flipY=false; page2.map = tex})
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".jpg", function(tex){tex.flipY=false; page0.map = tex})
-  */
 
  
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".jpg", function(tex){ tex.flipY=false; page3.map = tex})  
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".jpg", function(tex){tex.flipY=false; page1.map = tex})
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".jpg", function(tex){
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".webp", function(tex){ tex.flipY=false; page3.map = tex})  
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".webp", function(tex){tex.flipY=false; page1.map = tex})
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", function(tex){
     
     tex.flipY=false; 
     //tex.minFilter = THREE.NearestFilter;
@@ -176,7 +170,7 @@ function mapPagesNext(sheetNum){
 
 
 
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".jpg", function(tex){tex.flipY=false; page0.map = tex})
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", function(tex){tex.flipY=false; page0.map = tex})
 
 }
 
@@ -185,11 +179,11 @@ function mapPagesPrevious(sheetNum){
 
 
   
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".jpg", function(tex){tex.flipY=false; page0.map = tex})
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", function(tex){tex.flipY=false; page0.map = tex})
  
   
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".jpg", function(tex){tex.flipY=false; page1.map = tex})
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".jpg", function(tex){
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".webp", function(tex){tex.flipY=false; page1.map = tex})
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", function(tex){
     
     tex.flipY=false; 
     page2.map = tex;
@@ -201,7 +195,7 @@ function mapPagesPrevious(sheetNum){
   })
 
 
-  textureLoader.load("./assets/pages/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".jpg", function(tex){ tex.flipY=false; page3.map = tex})
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".webp", function(tex){ tex.flipY=false; page3.map = tex})
 
 
   
@@ -356,7 +350,26 @@ function ( gltf ) {
 
     bookScene = gltf.scene;
     bookAnim = gltf.animations;
-    console.log(bookAnim)
+    
+    var pages = [bookScene.getObjectByName("page_0"),
+    bookScene.getObjectByName("page_1").children[2],
+    bookScene.getObjectByName("page_1").children[1],
+    bookScene.getObjectByName("page_2")
+    ]
+
+
+    pages.forEach(page => {
+        const oldMaterial = page.material;
+        const newMaterial = new THREE.MeshBasicMaterial({
+            map: oldMaterial.map, // Retain the texture
+            side: THREE.DoubleSide, // If necessary for book pages
+        });
+        page.material = newMaterial
+    });
+
+
+
+
     scene.add( bookScene);
 
     
@@ -367,6 +380,9 @@ function ( gltf ) {
 
 
     mixer = new THREE.AnimationMixer(bookScene);
+
+
+    //bookScene.getObjectByName("page_1").children[1].material = new THREE.MeshBasicMaterial({color: "#ffffff", side: THREE.DoubleSide});
 
     page0 = bookScene.getObjectByName("page_0").material
     page1 = bookScene.getObjectByName("page_1").children[2].material
