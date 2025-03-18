@@ -126,7 +126,15 @@ var startBtn = document.getElementById("start-btn");
 
 startBtn.addEventListener("click",function(){
 
-    goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
+
+    if(window.innerWidth < 1300){
+
+      goToCamera([-1.9153064930837553,2.361142313198017,0.07628112775956432],[-1.9153064890826725,1.8612078653634396,0.0681849639558673 ])
+    }
+    else{
+      goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
+    }
+    //goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
     this.style.display = "none"
 
 
@@ -140,6 +148,45 @@ startBtn.addEventListener("click",function(){
     
 })
 
+var closeBtn = document.getElementById("close-btn");
+
+closeBtn.addEventListener("click",function(){
+
+
+
+    mixer.clipAction(bookAnim[0]).stop();
+    mixer.clipAction(bookAnim[1]).stop();
+    mixer.clipAction(bookAnim[2]).stop();
+    mixer.clipAction(bookAnim[3]).loop = THREE.LoopOnce ; 
+    mixer.clipAction(bookAnim[3]).clampWhenFinished = true;
+    mixer.clipAction(bookAnim[3]).play();
+
+
+    
+})
+
+var resetViewBtn = document.getElementById("reset-view-btn");
+console.log(resetViewBtn)
+resetViewBtn.addEventListener("click",function(){
+
+  goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
+
+})
+
+var cameraLeftBtn = document.getElementById("cam-left-btn");
+cameraLeftBtn.addEventListener("click",function(){
+      
+    goToPageCam([-2,2.361142313198017,0.07628112775956432],[-2,1.8612078653634396,0.0681849639558673 ])
+  
+  })
+
+var cameraRightBtn = document.getElementById("cam-right-btn");
+cameraRightBtn.addEventListener("click",function(){
+        
+      goToPageCam([0.04739493044643803,2.361142313198017,0.07628112775956432],[0.047394934447520826,1.862283830461397,0.0017455764570629556 ])
+    
+    });
+
 
 function padNum(num){
 
@@ -149,7 +196,75 @@ function padNum(num){
 
 
 
+function loadTexture(url, onLoadCallback) {
+  return new Promise((resolve) => {
+      textureLoader.load(url, function (tex) {
+          tex.flipY = false;
 
+          // Execute the callback function (e.g., assigning the texture)
+          if (onLoadCallback) {
+              onLoadCallback(tex);
+          }
+
+          resolve(); // Resolve the Promise when loading is complete
+      });
+  });
+}
+
+
+async function next(sheetNum) {
+  await loadTexture("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", (tex) => {
+      page0.map = tex;
+
+
+  });
+
+  await loadTexture("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".webp", (tex) => {
+      page1.map = tex;
+  
+      mixer.clipAction(bookAnim[1]).stop(); 
+      mixer.clipAction(bookAnim[0]).reset();
+  });
+
+  await loadTexture("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", (tex) => {
+      page2.map = tex;
+  });
+
+  await loadTexture("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".webp", (tex) => {
+      page3.map = tex;
+      mixer.clipAction(bookAnim[2]).stop();
+      mixer.clipAction(bookAnim[0]).loop = THREE.LoopOnce ; 
+      mixer.clipAction(bookAnim[0]).clampWhenFinished = true;
+      mixer.clipAction(bookAnim[0]).play();
+    
+  });
+
+
+}
+
+
+
+
+function flipNextAnim(onComplete){
+
+  mixer.clipAction(bookAnim[2]).stop();  
+  mixer.clipAction(bookAnim[1]).stop();  
+  mixer.clipAction(bookAnim[0]).reset();  
+  mixer.clipAction(bookAnim[0]).loop = THREE.LoopOnce ; 
+  mixer.clipAction(bookAnim[0]).clampWhenFinished = true;
+  mixer.clipAction(bookAnim[0]).play();
+
+  console.log(currentSheet + (currentSheet - 2))
+  console.log(currentSheet + (currentSheet - 1))
+
+  //callback function when page is done flipping
+  mixer.addEventListener( 'finished', function( e ) {
+    onComplete();
+  
+  } )
+
+  
+}
 
 function mapPagesNext(sheetNum){
 
@@ -173,6 +288,47 @@ function mapPagesNext(sheetNum){
   textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", function(tex){tex.flipY=false; page0.map = tex})
 
 }
+
+
+/*
+function mapPagesNext(sheetNum) {
+  let loadedPages = 0;
+  const totalPagesToLoadBeforeAnim = 2; // Pages 3 and 2
+  
+  // Load pages 3 and 2 first, then call flipNextAnim
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".webp", function(tex) {
+      tex.flipY = false;
+      page3.map = tex;
+      loadedPages++;
+      if (loadedPages === totalPagesToLoadBeforeAnim) {
+          flipNextAnim(() => {
+            console.log("Animation complete, now loading pages 0 and 1")}); // Call flipNextAnim after pages 3 and 2 are loaded
+      }
+  });
+  
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", function(tex) {
+      tex.flipY = false;
+      page2.map = tex;
+      loadedPages++;
+      if (loadedPages === totalPagesToLoadBeforeAnim) {
+          flipNextAnim(() => {
+            console.log("Animation complete, now loading pages 0 and 1");}); // Call flipNextAnim after pages 3 and 2 are loaded
+      }
+  });
+
+  // Load pages 1 and 0 after flipNextAnim
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".webp", function(tex) {
+      tex.flipY = false;
+      page1.map = tex;
+  });
+
+  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", function(tex) {
+      tex.flipY = false;
+      page0.map = tex;
+  });
+    
+}
+*/
 
 
 function mapPagesPrevious(sheetNum){
@@ -203,20 +359,7 @@ function mapPagesPrevious(sheetNum){
 }
 
 
-function flipNextAnim(){
 
-  mixer.clipAction(bookAnim[2]).stop();  
-  mixer.clipAction(bookAnim[1]).stop();  
-  mixer.clipAction(bookAnim[0]).reset();  
-  mixer.clipAction(bookAnim[0]).loop = THREE.LoopOnce ; 
-  mixer.clipAction(bookAnim[0]).clampWhenFinished = true;
-  mixer.clipAction(bookAnim[0]).play();
-
-  console.log(currentSheet + (currentSheet - 2))
-  console.log(currentSheet + (currentSheet - 1))
-
-  
-}
 
 
 function flipPreviousAnim(){
@@ -254,8 +397,8 @@ previousBtn.addEventListener("click",function(){
 
   if(currentSheet < MAX_SHEETS){
 
-
-    mapPagesNext(currentSheet);
+    next(currentSheet);
+    //mapPagesNext(currentSheet);
 
 
 
@@ -277,7 +420,7 @@ function goToPage(pageNum){
   console.log(sheetNum)
 
   if(sheetNum > currentSheet){
-    mapPagesNext(sheetNum)
+    next(sheetNum)
   }
   else{
     mapPagesPrevious(sheetNum)
@@ -350,6 +493,8 @@ function ( gltf ) {
 
     bookScene = gltf.scene;
     bookAnim = gltf.animations;
+    console.log(bookScene.getObjectByName("backCover").material.map)
+    console.log(bookScene.getObjectByName("frontCover").material.map)
     
     var pages = [bookScene.getObjectByName("page_0"),
     bookScene.getObjectByName("page_1").children[2],
@@ -459,6 +604,43 @@ function goToCamera(eye,target){
   })
     .start();
 }
+
+function goToPageCam(eye, target) {
+  // Compute the x-offset difference
+  let deltaX = eye[0] - camera.position.x;
+
+  // Eye (Camera Position) - Moving only in X
+  var from = { x: camera.position.x };
+  var to = { x: eye[0] };
+
+  tween_eye = new Tween(from, false)
+    .to(to, cameraTransitionTime)
+    .easing(Easing.Quadratic.InOut)
+    .onUpdate(function () {
+      camera.position.set(from.x, camera.position.y, camera.position.z);
+      controls.update();
+    })
+    .start();
+
+  // Target (LookAt Position) - Moving only in X by the same offset
+  var from_target = { x: controls.target.x };
+  var to_target = { x: controls.target.x + deltaX };
+
+  tween_target = new Tween(from_target, false)
+    .to(to_target, cameraTransitionTime)
+    .easing(Easing.Quadratic.InOut)
+    .onUpdate(function () {
+      controls.target.set(from_target.x, controls.target.y, controls.target.z);
+    })
+    .onComplete(function () {
+      controls.update();
+    })
+    .start();
+
+  // Ensure camera.up is set correctly to avoid tilting
+  camera.up.set(0, 0,-1);
+}
+
 
 document.addEventListener("keydown", function(e){
 

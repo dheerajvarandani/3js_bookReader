@@ -164,6 +164,17 @@
         opacity: 0;
         }
         }
+
+        #cam-left-btn, #cam-right-btn{
+            display: none;
+        }
+
+        @media screen and (max-width: 1300px) {
+            #cam-left-btn, #cam-right-btn{
+                display: inline;
+            }
+            
+        }
 </style>
 
 
@@ -176,14 +187,19 @@
 </div>
 
 <div style="position:absolute; top: 2vh; left: 0;right: 0; margin:auto;font-size: 15vh; text-align: center;">
+
+    <button id="cam-left-btn"> <- </button>
     <button id="previous-btn"> < </button>
     <button id="next-btn"> > </button>
+    <button id="cam-right-btn"> -> </button>
 </div>
 
 <div style="position:absolute; bottom: 5vh; left: 0;right: 0; margin:auto;font-size: 15vh; text-align: center;">
     <input id="sheet-num-input" type="number">
     <button id="go-to-btn"> Go </button>
     <button id="start-btn"> START </button>
+    <button id="reset-view-btn"> RESET VIEW </button>
+    <button id="close-btn"> CLOSE </button>
 </div>
 
 <audio id="rain-audio" loop src="./assets/rain.mp3"></audio>
