@@ -485,7 +485,7 @@ loadingManager.onLoad = function(){
 const loader = new GLTFLoader(loadingManager);
 loader.load(
 // resource URL
-'./assets/book_flip.gltf',
+'./assets/book_flip2.gltf',
 //'https://storage.googleapis.com/dheerajv-bucket/images/aorta.glb',
 // called when the resource is loaded
 function ( gltf ) {
@@ -517,10 +517,10 @@ function ( gltf ) {
 
     scene.add( bookScene);
 
-    
+    /*
     bookScene.getObjectByName("Bulb").material.emissive = new THREE.Color().setRGB( 1, 1, 1 );
     bookScene.getObjectByName("Bulb").material.emissiveIntensity = 5;
-
+*/
 
 
 
