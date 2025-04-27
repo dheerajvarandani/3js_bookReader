@@ -135,7 +135,7 @@ startBtn.addEventListener("click",function(){
       goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
     }
     //goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
-    this.style.display = "none"
+    //this.style.display = "none"
 
 
     mixer.clipAction(bookAnim[2]).loop = THREE.LoopOnce ; 
@@ -200,7 +200,17 @@ function loadTexture(url, onLoadCallback) {
   return new Promise((resolve) => {
       textureLoader.load(url, function (tex) {
           tex.flipY = false;
+          
+          //tex.generateMipmaps = false;
+          /*
 
+          
+          tex.needsUpdate = true; // Ensure the texture is updated
+          */
+          tex.colorSpace  = THREE.SRGBColorSpace;
+          tex.minFilter = THREE.NearestFilter
+          //tex.magFilter = THREE.LinearMipMapLinearFilter;
+          tex.anisotropy = 16; // Set anisotropy for better quality
           // Execute the callback function (e.g., assigning the texture)
           if (onLoadCallback) {
               onLoadCallback(tex);
@@ -214,6 +224,11 @@ function loadTexture(url, onLoadCallback) {
 
 async function next(sheetNum) {
   await loadTexture("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", (tex) => {
+
+      //tex.anisotropy = 16; // Set anisotropy for better quality
+
+      //tex.needsUpdate = true; // Ensure the texture is updated
+
       page0.map = tex;
 
 
@@ -274,10 +289,13 @@ function mapPagesNext(sheetNum){
   textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".webp", function(tex){tex.flipY=false; page1.map = tex})
   textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", function(tex){
     
-    tex.flipY=false; 
-    //tex.minFilter = THREE.NearestFilter;
-    //tex.magFilter = THREE.NearestFilter;
+
     page2.map = tex;
+
+    tex.flipY=false; 
+    tex.minFilter = THREE.NearestFilter;
+    tex.magFilter = THREE.NearestFilter;
+    tex.needsUpdate = true; // Ensure the texture is updated
     
     flipNextAnim()
   
@@ -342,6 +360,9 @@ function mapPagesPrevious(sheetNum){
   textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", function(tex){
     
     tex.flipY=false; 
+    //tex.generateMipmaps = false;
+    //tex.anisotropy = 16;
+
     page2.map = tex;
 
     
@@ -485,7 +506,7 @@ loadingManager.onLoad = function(){
 const loader = new GLTFLoader(loadingManager);
 loader.load(
 // resource URL
-'./assets/book_flip2.gltf',
+'./assets/book_flip.gltf',
 //'https://storage.googleapis.com/dheerajv-bucket/images/aorta.glb',
 // called when the resource is loaded
 function ( gltf ) {
@@ -670,6 +691,7 @@ window.addEventListener('resize', function()
 var width = window.innerWidth;
 var height = window.innerHeight;
 renderer.setSize( width, height );
+renderer.setPixelRatio( this.window.devicePixelRatio );
 camera.aspect = width / height;
 camera.updateProjectionMatrix();
 } );
