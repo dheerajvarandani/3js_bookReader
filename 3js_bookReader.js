@@ -1,725 +1,382 @@
+// -----------------------------------------------------------------------------
+// 3‑D BOOK – TEXTURE CACHE + CAMERA TRANSITIONS + START BUTTON + HDRI
+// (clampWhenFinished fixed: property assignment instead of function call)
+// -----------------------------------------------------------------------------
+//  Single‑file drop‑in.  All animation actions now use:
+//      action.clampWhenFinished = true;
+//  instead of the erroneous .clampWhenFinished(true).
+// -----------------------------------------------------------------------------
 
 import * as THREE from 'three';
-import { GLTFLoader } from "./three/GLTFLoader.js";
-import { OrbitControls } from './three/OrbitControls.js';
-import { RGBELoader } from './three/RGBELoader.js';
-import { RectAreaLightHelper } from './three//RectAreaLightHelper.js';
+import { GLTFLoader }          from './three/GLTFLoader.js';
+import { OrbitControls }       from './three/OrbitControls.js';
+import { RGBELoader }          from './three/RGBELoader.js';
+import { RectAreaLightHelper } from './three/RectAreaLightHelper.js';
+import { Tween, Easing }       from './tween/tween.esm.js';
 
-import {Tween,Easing} from './tween/tween.esm.js'
+// ‑‑‑‑‑‑‑‑‑‑ GLOBAL CONSTANTS --------------------------------------------------
+const NUM_PAGES   = 148;
+const NUM_SHEETS  = NUM_PAGES / 2;     // 74
+const cameraTransitionTime = 2000;     // ms
 
-let loadingDiv = document.getElementById('loadingDiv');
+// Cache for ALL page textures
+const textureCache = Object.create(null);
+const fallbackTex  = new THREE.Texture(document.createElement('canvas'));
+fallbackTex.needsUpdate = true;
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-const container = document.getElementById("threejscanvas")
+// -----------------------------------------------------------------------------
+//  LOADING SCREEN + CANVAS SETUP
+// -----------------------------------------------------------------------------
+const loadingDiv = document.getElementById('loadingDiv');
+const container  = document.getElementById('threejscanvas');
 
+const scene    = new THREE.Scene();
+const camera   = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ canvas: container, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(container.clientWidth, container.clientHeight);
 
-
-const renderer = new THREE.WebGLRenderer({canvas: container, antialias: true});
-renderer.setSize( container.clientWidth, container.clientHeight );
-
-//document.body.appendChild( renderer.domElement );'
-
-
-const controls = new OrbitControls( camera, renderer.domElement );
-
-camera.position.x = -1;
-camera.position.y = 2.25;
-camera.position.z = 6;
-
-controls.target.set(-1, 1, 1);
-
-
-
+const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.02;
-controls.rotateSpeed = 0.1
+controls.rotateSpeed   = 0.1;
 
-/*
-controls.maxDistance = 5;
-controls.maxPolarAngle = 1.1;
-controls.maxAzimuthAngle = 1
-controls.minAzimuthAngle = -1
-*/
+camera.position.set(-1, 2.25, 6);
+controls.target.set(-1, 1, 1);
 
+// Lights ----------------------------------------------------------------------
+const spot = new THREE.SpotLight('#FFFFFF', 1, 5, 0.5, 1);
+spot.position.set(-5, 4, -3);
+//scene.add(spot);
 
+// ───────────────── Candle‑style point light (flickering) ─────────────────────
+const candleLight = new THREE.PointLight('#ffb36b', 1.2, 20, 0.5); // warm yellow‑orange
+candleLight.position.set(-4.2, 1.8, -1.2);   // initial guess – move as needed
+scene.add(candleLight);
 
+// visual aid: tiny glowing bulb + helper wireframe
 
-//spotlight
+const candleHelper = new THREE.PointLightHelper(candleLight, 0.15);
+//scene.add(candleHelper);
 
-const spotLight = new THREE.SpotLight("#FFFFFF",1,5,0.5,0.2,0,0); // White light, intensity 1
+const rectBack = new THREE.RectAreaLight('#f0a344', 1, 40, 20);
+rectBack.position.set(-0.4, 5, 12);
+rectBack.lookAt(0, 5, 0);
+scene.add(rectBack);
 
-spotLight.position.set(-5, 4, -3); // Position the spotlight
-
-scene.add(spotLight);
-
-spotLight.castShadow = true;
-
-// Target for the spotlight
-const spotLightTarget = new THREE.Object3D();
-spotLightTarget.position.set(0, 0, 0); // Point the spotlight at the origin
-//scene.add(spotLightTarget);
-spotLight.target = spotLightTarget;
-
-// Add a helper to visualize the spotlight
-const spotLightHelper = new THREE.SpotLightHelper(spotLight);
-//scene.add(spotLightHelper);
-
-const width = 20;
-const height = 20;
-const intensity = 3;
-const rectLight = new THREE.RectAreaLight( "#f0a344", intensity,  width, height );
-rectLight.position.set( -0.4, 5, -12 );
-rectLight.lookAt( 0, 5, 0 );
-rectLight.castShadow = true;
-
-scene.add( rectLight )
-
-
-const rectLight_back = new THREE.RectAreaLight( "#f0a344", 1,  40, height );
-rectLight_back.position.set( -0.4, 5, 12 );
-rectLight_back.lookAt( 0, 5, 0 );
-rectLight_back.castShadow = true;
-
-scene.add( rectLight_back )
-
-
-
-const helper = new RectAreaLightHelper( rectLight_back );
-//rectLight.add( helper ); // helper must be added as a child of the light
-
-
-// Add spotlight
-const spotLight2 = new THREE.SpotLight("#FFFFFF", intensity);
-spotLight2.position.set(-0.4, 5, -20);
-spotLight2.target.position.set(0, 5, 0);
-spotLight2.castShadow = true;
-
-//scene.add(spotLight2);
-scene.add(spotLight2.target);
-
-// Optional: Add a helper to visualize the spotlight
-const spotLightHelper2 = new THREE.SpotLightHelper(spotLight2);
-//scene.add(spotLightHelper2);
-
-let bookScene;
-let bookAnim;
-let mixer;
-
-var page0
-var page1
-var page2
-var page3
-let textureLoader = new THREE.TextureLoader();
-
-
-let currentSheet = 1;
-let MAX_SHEETS = 150;
-
-
-
-var clock = new THREE.Clock()
-var delta = clock.getDelta();
-
-
-var startBtn = document.getElementById("start-btn");
-
-startBtn.addEventListener("click",function(){
-
-
-    if(window.innerWidth < 1300){
-
-      goToCamera([-1.9153064930837553,2.361142313198017,0.07628112775956432],[-1.9153064890826725,1.8612078653634396,0.0681849639558673 ])
-    }
-    else{
-      goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
-    }
-    //goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
-    //this.style.display = "none"
-
-
-    mixer.clipAction(bookAnim[2]).loop = THREE.LoopOnce ; 
-    mixer.clipAction(bookAnim[2]).clampWhenFinished = true;
-    mixer.clipAction(bookAnim[2]).play();
-
-    var rainAudio = document.getElementById("rain-audio");
-    rainAudio.play();
-
-    
-})
-
-var closeBtn = document.getElementById("close-btn");
-
-closeBtn.addEventListener("click",function(){
-
-
-
-    mixer.clipAction(bookAnim[0]).stop();
-    mixer.clipAction(bookAnim[1]).stop();
-    mixer.clipAction(bookAnim[2]).stop();
-    mixer.clipAction(bookAnim[3]).loop = THREE.LoopOnce ; 
-    mixer.clipAction(bookAnim[3]).clampWhenFinished = true;
-    mixer.clipAction(bookAnim[3]).play();
-
-
-    
-})
-
-var resetViewBtn = document.getElementById("reset-view-btn");
-console.log(resetViewBtn)
-resetViewBtn.addEventListener("click",function(){
-
-  goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
-
-})
-
-var cameraLeftBtn = document.getElementById("cam-left-btn");
-cameraLeftBtn.addEventListener("click",function(){
-      
-    goToPageCam([-2,2.361142313198017,0.07628112775956432],[-2,1.8612078653634396,0.0681849639558673 ])
-  
-  })
-
-var cameraRightBtn = document.getElementById("cam-right-btn");
-cameraRightBtn.addEventListener("click",function(){
-        
-      goToPageCam([0.04739493044643803,2.361142313198017,0.07628112775956432],[0.047394934447520826,1.862283830461397,0.0017455764570629556 ])
-    
-    });
-
-
-function padNum(num){
-
-  return(String(num).padStart(3, '0'));
-
-}
-
-
-
-function loadTexture(url, onLoadCallback) {
-  return new Promise((resolve) => {
-      textureLoader.load(url, function (tex) {
-          tex.flipY = false;
-          
-          //tex.generateMipmaps = false;
-          /*
-
-          
-          tex.needsUpdate = true; // Ensure the texture is updated
-          */
-          tex.colorSpace  = THREE.SRGBColorSpace;
-          tex.minFilter = THREE.NearestFilter
-          //tex.magFilter = THREE.LinearMipMapLinearFilter;
-          tex.anisotropy = 16; // Set anisotropy for better quality
-          // Execute the callback function (e.g., assigning the texture)
-          if (onLoadCallback) {
-              onLoadCallback(tex);
-          }
-
-          resolve(); // Resolve the Promise when loading is complete
-      });
-  });
-}
-
-
-async function next(sheetNum) {
-  await loadTexture("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", (tex) => {
-
-      //tex.anisotropy = 16; // Set anisotropy for better quality
-
-      //tex.needsUpdate = true; // Ensure the texture is updated
-
-      page0.map = tex;
-
-
-  });
-
-  await loadTexture("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".webp", (tex) => {
-      page1.map = tex;
-  
-      mixer.clipAction(bookAnim[1]).stop(); 
-      mixer.clipAction(bookAnim[0]).reset();
-  });
-
-  await loadTexture("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", (tex) => {
-      page2.map = tex;
-  });
-
-  await loadTexture("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".webp", (tex) => {
-      page3.map = tex;
-      mixer.clipAction(bookAnim[2]).stop();
-      mixer.clipAction(bookAnim[0]).loop = THREE.LoopOnce ; 
-      mixer.clipAction(bookAnim[0]).clampWhenFinished = true;
-      mixer.clipAction(bookAnim[0]).play();
-    
-  });
-
-
-}
-
-
-
-
-function flipNextAnim(onComplete){
-
-  mixer.clipAction(bookAnim[2]).stop();  
-  mixer.clipAction(bookAnim[1]).stop();  
-  mixer.clipAction(bookAnim[0]).reset();  
-  mixer.clipAction(bookAnim[0]).loop = THREE.LoopOnce ; 
-  mixer.clipAction(bookAnim[0]).clampWhenFinished = true;
-  mixer.clipAction(bookAnim[0]).play();
-
-  console.log(currentSheet + (currentSheet - 2))
-  console.log(currentSheet + (currentSheet - 1))
-
-  //callback function when page is done flipping
-  mixer.addEventListener( 'finished', function( e ) {
-    onComplete();
-  
-  } )
-
-  
-}
-
-function mapPagesNext(sheetNum){
-
-
- 
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".webp", function(tex){ tex.flipY=false; page3.map = tex})  
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".webp", function(tex){tex.flipY=false; page1.map = tex})
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", function(tex){
-    
-
-    page2.map = tex;
-
-    tex.flipY=false; 
-    tex.minFilter = THREE.NearestFilter;
-    tex.magFilter = THREE.NearestFilter;
-    tex.needsUpdate = true; // Ensure the texture is updated
-    
-    flipNextAnim()
-  
-  })
-
-
-
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", function(tex){tex.flipY=false; page0.map = tex})
-
-}
-
-
-/*
-function mapPagesNext(sheetNum) {
-  let loadedPages = 0;
-  const totalPagesToLoadBeforeAnim = 2; // Pages 3 and 2
-  
-  // Load pages 3 and 2 first, then call flipNextAnim
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".webp", function(tex) {
-      tex.flipY = false;
-      page3.map = tex;
-      loadedPages++;
-      if (loadedPages === totalPagesToLoadBeforeAnim) {
-          flipNextAnim(() => {
-            console.log("Animation complete, now loading pages 0 and 1")}); // Call flipNextAnim after pages 3 and 2 are loaded
-      }
-  });
-  
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", function(tex) {
-      tex.flipY = false;
-      page2.map = tex;
-      loadedPages++;
-      if (loadedPages === totalPagesToLoadBeforeAnim) {
-          flipNextAnim(() => {
-            console.log("Animation complete, now loading pages 0 and 1");}); // Call flipNextAnim after pages 3 and 2 are loaded
-      }
-  });
-
-  // Load pages 1 and 0 after flipNextAnim
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".webp", function(tex) {
-      tex.flipY = false;
-      page1.map = tex;
-  });
-
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", function(tex) {
-      tex.flipY = false;
-      page0.map = tex;
-  });
-    
-}
-*/
-
-
-function mapPagesPrevious(sheetNum){
-
-
-  
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) - 1) + ".webp", function(tex){tex.flipY=false; page0.map = tex})
- 
-  
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1)) + ".webp", function(tex){tex.flipY=false; page1.map = tex})
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 1) + ".webp", function(tex){
-    
-    tex.flipY=false; 
-    //tex.generateMipmaps = false;
-    //tex.anisotropy = 16;
-
-    page2.map = tex;
-
-    
-    
-    flipPreviousAnim()
-  
-  })
-
-
-  textureLoader.load("./assets/pages_webp/pg_" + padNum(sheetNum + (sheetNum - 1) + 2) + ".webp", function(tex){ tex.flipY=false; page3.map = tex})
-
-
-  
-
-}
-
-
-
-
-
-function flipPreviousAnim(){
-
-  mixer.clipAction(bookAnim[2]).stop();
-  mixer.clipAction(bookAnim[0]).stop();  
-  mixer.clipAction(bookAnim[1]).reset();  
-  mixer.clipAction(bookAnim[1]).loop = THREE.LoopOnce ; 
-  mixer.clipAction(bookAnim[1]).clampWhenFinished = true;
-  mixer.clipAction(bookAnim[1]).play(); 
-
-  console.log(currentSheet + (currentSheet - 2))
-  console.log(currentSheet + (currentSheet - 1))
-    
-
-
-}
-
-
-var nextBtn = document.getElementById("next-btn");
-
-nextBtn.addEventListener("click",function(){
-
-    currentSheet--;
-    mapPagesPrevious(currentSheet);
-
-    
-
-})
-
-var previousBtn = document.getElementById("previous-btn");
-
-previousBtn.addEventListener("click",function(){
-
-
-  if(currentSheet < MAX_SHEETS){
-
-    next(currentSheet);
-    //mapPagesNext(currentSheet);
-
-
-
-
-  }
-  else{
-    console.log("max sheets reached")
-  }
-
-    currentSheet++;
-
-})
-
-
-function goToPage(pageNum){
-
-  var sheetNum = (pageNum + 1) / 2;
-
-  console.log(sheetNum)
-
-  if(sheetNum > currentSheet){
-    next(sheetNum)
-  }
-  else{
-    mapPagesPrevious(sheetNum)
-  }
-
-  currentSheet = sheetNum;
-
-}
-
-
-var goToBtn = document.getElementById("go-to-btn");
-var sheetNumInput = document.getElementById("sheet-num-input");
-goToBtn.addEventListener("click", function(){
-
-  var pageNum = parseInt(sheetNumInput.value)
-  goToPage(pageNum)
-
-
-})
-
-// ---------------------------------------------------------------------
-// HDRI - IMAGE BASED LIGHTING
-// ---------------------------------------------------------------------
-new RGBELoader()
-.setPath('./assets/')
-.load('brown_photostudio_01_2k.hdr', function (texture) {
-
-    
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-
-    scene.environment = texture;
-    //scene.background = texture;
-    //scene.environmentRotation = (new THREE.Euler(0, 0.14, 0));
-    //scene.backgroundRotation = (new THREE.Euler(0, 0.14, 0));
-
- 
-
-});
-
-var backgroundSphere = new THREE.Mesh(
-  new THREE.SphereGeometry(40,20,20),
+// Background sphere -----------------------------------------------------------
+const backgroundSphere = new THREE.Mesh(
+  new THREE.SphereGeometry(40, 20, 20),
   new THREE.MeshBasicMaterial({
-      map: (new THREE.TextureLoader).load("./assets/riyadh360_3.jpg"),
-      side:THREE.DoubleSide
+    map: new THREE.TextureLoader().load('./assets/riyadh360_3.jpg'),
+    side: THREE.DoubleSide,
   })
 );
-backgroundSphere.position.set(0,-175,0)
-backgroundSphere.rotation.set(0,-4.8,0)
-backgroundSphere.scale.set(20,20,20)
+backgroundSphere.position.set(0, -175, 0);
+backgroundSphere.rotation.set(0, -4.8, 0);
+backgroundSphere.scale.set(20, 20, 20);
+scene.add(backgroundSphere);
+
+// -------------------------------- TEXTURE PRELOAD ----------------------------
+function pad(n) { return String(n).padStart(3, '0'); }
+
+function preloadTextures() {
+    return new Promise(resolve => {
+      const manager = new THREE.LoadingManager(resolve);
+      const loader  = new THREE.TextureLoader(manager);
+  
+      for (let i = 1; i <= NUM_PAGES; i++) {
+        loader.load(`./assets/pages_webp/pg_${pad(i)}.webp`, tex => {
+  
+          /* 🔹 Configure once, right after load */
+          tex.flipY           = false;
+          tex.colorSpace      = THREE.SRGBColorSpace;          // correct gamma
+          tex.generateMipmaps = true;                          // enable tri‑linear
+          tex.minFilter       = THREE.LinearMipmapLinearFilter;// smooth when zoomed out
+          tex.magFilter       = THREE.LinearFilter;            // crisp when zoomed in
+          tex.anisotropy      = 16
+          /* 🔹 End config */
+  
+          textureCache[i] = tex;                    // store in cache
+        });
+      }
+    });
+  }
+
+// ------------------------------- MODEL + MATERIALS ---------------------------
+let mixer, bookAnim, root;
+let page0Mat, page1Mat, page2Mat, page3Mat;
+let currentSheet = 1;
+
+function applyTexturesForSheet(sheet) {
+  const firstPage = (sheet - 1) * 2 + 1;
+  const maps = [
+    textureCache[firstPage - 1] || fallbackTex,
+    textureCache[firstPage]     || fallbackTex,
+    textureCache[firstPage + 1] || fallbackTex,
+    textureCache[firstPage + 2] || fallbackTex,
+  ];
+  [page0Mat, page1Mat, page2Mat, page3Mat].forEach((m, i) => {
+    m.map = maps[i];
+    m.map.needsUpdate = true;
+  });
+}
+
+function buildBook(gltf) {
+  root = gltf.scene;
+  bookAnim   = gltf.animations;
+
+      var pages = [root.getObjectByName("page_0"),
+      root.getObjectByName("page_1").children[2],
+      root.getObjectByName("page_1").children[1],
+      root.getObjectByName("page_2")
+      ]
+      
+      
+      root.getObjectByName("pSphere1").material.color = new THREE.Color(0x000000);
+      root.getObjectByName("pSphere1").material.emissiveIntensity = 0
+  
+      pages.forEach(page => {
+          const oldMaterial = page.material;
+          const newMaterial = new THREE.MeshBasicMaterial({
+              map: oldMaterial.map, // Retain the texture
+              side: THREE.DoubleSide, // If necessary for book pages
+          });
+          page.material = newMaterial
+      });
 
 
-var loadingManager = new THREE.LoadingManager();
+  page0Mat = root.getObjectByName('page_0').material;
+  page1Mat = root.getObjectByName('page_1').children[2].material;
+  page2Mat = root.getObjectByName('page_1').children[1].material;
+  page3Mat = root.getObjectByName('page_2').material;
 
-loadingManager.onLoad = function(){
+  
 
-  //console.log("loaded")
-  loadingDiv.style.display = "none";
+
+  scene.add(root);
+  mixer = new THREE.AnimationMixer(root);
+  //applyTexturesForSheet(currentSheet);
+
 
 }
 
-
-const loader = new GLTFLoader(loadingManager);
-loader.load(
-// resource URL
-'./assets/book_flip.gltf',
-//'https://storage.googleapis.com/dheerajv-bucket/images/aorta.glb',
-// called when the resource is loaded
-function ( gltf ) {
-
-
-    bookScene = gltf.scene;
-    bookAnim = gltf.animations;
-    console.log(bookScene.getObjectByName("backCover").material.map)
-    console.log(bookScene.getObjectByName("frontCover").material.map)
-    
-    var pages = [bookScene.getObjectByName("page_0"),
-    bookScene.getObjectByName("page_1").children[2],
-    bookScene.getObjectByName("page_1").children[1],
-    bookScene.getObjectByName("page_2")
-    ]
-
-
-    pages.forEach(page => {
-        const oldMaterial = page.material;
-        const newMaterial = new THREE.MeshBasicMaterial({
-            map: oldMaterial.map, // Retain the texture
-            side: THREE.DoubleSide, // If necessary for book pages
-        });
-        page.material = newMaterial
-    });
-
-
-
-
-    scene.add( bookScene);
-
-    /*
-    bookScene.getObjectByName("Bulb").material.emissive = new THREE.Color().setRGB( 1, 1, 1 );
-    bookScene.getObjectByName("Bulb").material.emissiveIntensity = 5;
-*/
-
-
-
-    mixer = new THREE.AnimationMixer(bookScene);
-
-
-    //bookScene.getObjectByName("page_1").children[1].material = new THREE.MeshBasicMaterial({color: "#ffffff", side: THREE.DoubleSide});
-
-    page0 = bookScene.getObjectByName("page_0").material
-    page1 = bookScene.getObjectByName("page_1").children[2].material
-    page2 = bookScene.getObjectByName("page_1").children[1].material
-    page3 = bookScene.getObjectByName("page_2").material
-
-    scene.add(backgroundSphere)
-
-});
-
-
-
-//camera
-
-var tween_eye,tween_target;
-
-var cameraTransitionTime = 2000 //milliseconds
-
-function goToCamera(eye,target){
-
-  //eye
-  var from = {
-    x: camera.position.x,
-    y: camera.position.y,
-    z: camera.position.z
-  };
+// ------------------------------ ANIMATION HELPERS ----------------------------
+function playFlip(forward) {
+    const clipIdx = forward ? 0 : 1;   // 0 = forward, 1 = backward
+    const action  = mixer.clipAction(bookAnim[clipIdx]);
   
-  var to = {
-    x: eye[0],
-    y: eye[1],
-    z: eye[2],
-  };
-   tween_eye = new Tween(from,false)
-    .to(to, cameraTransitionTime)
-    .easing(Easing.Quadratic.InOut)
-    .onUpdate(function () {
-    camera.position.set(from.x,from.y,from.z);
-    //camera.lookAt(new THREE.Vector3(0, 0, -0.5));
-    //controls.target = new THREE.Vector3(0, 0, -0.5)
-    controls.update()
-    
-  })
+    mixer.stopAllAction();             // halt anything already running
+    action.reset();
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+    action.play();
+  }
+  
+  /**
+   * 1.  Put the target sheet’s four textures on the meshes
+   * 2.  THEN play the flip animation
+   *      → because every page image is already cached, the swap is instant
+   * 3.  No 'finished' listener is required any more
+   */
+  function animateFlipAndSwap(forward, targetSheet) {
+    currentSheet = targetSheet;            // update global index
+    applyTexturesForSheet(currentSheet);   // 🟢 swap maps first
+    playFlip(forward);                     // 🟢 then animate
+  }
+  
 
+function nextSheet() {
+  if (currentSheet >= NUM_SHEETS) return;
+  animateFlipAndSwap(true, currentSheet + 1);
+}
+
+function prevSheet() {
+  if (currentSheet <= 1) return;
+  animateFlipAndSwap(false, currentSheet - 1);
+}
+
+function goToPage(page) {
+  if (page < 1 || page > NUM_PAGES) {
+    console.warn('Page out of range');
+    return;
+  }
+  const targetSheet = Math.ceil(page / 2);
+  currentSheet      = targetSheet;
+  applyTexturesForSheet(targetSheet);
+}
+
+// ------------------------------ CAMERA TRANSITIONS ---------------------------
+let tweenEye, tweenTarget;
+
+function goToCamera(eye, target) {
+  const fromPos = { ...camera.position };
+  tweenEye = new Tween(fromPos)
+    .to({ x: eye[0], y: eye[1], z: eye[2] }, cameraTransitionTime)
+    .easing(Easing.Quadratic.InOut)
+    .onUpdate(() => {
+      camera.position.set(fromPos.x, fromPos.y, fromPos.z);
+      controls.update();
+    })
     .start();
 
-
-
-    //target
-  var from_target = {
-    x: controls.target.x, 
-    y: controls.target.y,
-    z: controls.target.z
-  };
-  
-  var to_target = {
-    x: target[0],
-    y: target[1],
-    z: target[2],
-  };
-   tween_target = new Tween(from_target,false)
-    .to(to_target, cameraTransitionTime)
+  const fromTar = { ...controls.target };
+  tweenTarget = new Tween(fromTar)
+    .to({ x: target[0], y: target[1], z: target[2] }, cameraTransitionTime)
     .easing(Easing.Quadratic.InOut)
-    .onUpdate(function () {
-    //camera.lookAt(from_target.x,from_target.y,from_target.z);
-    //camera.lookAt(new THREE.Vector3(0, 0, -0.5));
-    controls.target.set(from_target.x,from_target.y,from_target.z)
-    //controls.update()
-    
-  })
-    .onComplete(function () {
-    //controls.target.copy(scene.position);
-    //controls.update()
-
-  })
+    .onUpdate(() => controls.target.set(fromTar.x, fromTar.y, fromTar.z))
+    .onComplete(() => controls.update())
     .start();
 }
 
 function goToPageCam(eye, target) {
-  // Compute the x-offset difference
-  let deltaX = eye[0] - camera.position.x;
-
-  // Eye (Camera Position) - Moving only in X
-  var from = { x: camera.position.x };
-  var to = { x: eye[0] };
-
-  tween_eye = new Tween(from, false)
-    .to(to, cameraTransitionTime)
+  const deltaX = eye[0] - camera.position.x;
+  const from   = { x: camera.position.x };
+  tweenEye = new Tween(from)
+    .to({ x: eye[0] }, cameraTransitionTime)
     .easing(Easing.Quadratic.InOut)
-    .onUpdate(function () {
+    .onUpdate(() => {
       camera.position.set(from.x, camera.position.y, camera.position.z);
       controls.update();
     })
     .start();
 
-  // Target (LookAt Position) - Moving only in X by the same offset
-  var from_target = { x: controls.target.x };
-  var to_target = { x: controls.target.x + deltaX };
-
-  tween_target = new Tween(from_target, false)
-    .to(to_target, cameraTransitionTime)
+  const fromTar = { x: controls.target.x };
+  tweenTarget = new Tween(fromTar)
+    .to({ x: controls.target.x + deltaX }, cameraTransitionTime)
     .easing(Easing.Quadratic.InOut)
-    .onUpdate(function () {
-      controls.target.set(from_target.x, controls.target.y, controls.target.z);
-    })
-    .onComplete(function () {
-      controls.update();
-    })
+    .onUpdate(() => controls.target.set(fromTar.x, controls.target.y, controls.target.z))
+    .onComplete(() => controls.update())
     .start();
-
-  // Ensure camera.up is set correctly to avoid tilting
-  camera.up.set(0, 0,-1);
 }
 
+// ------------------------------ DOM HOOKS ------------------------------------
+const nextBtn      = document.getElementById('next-btn');
+const prevBtn      = document.getElementById('previous-btn');
+const goToBtn      = document.getElementById('go-to-btn');
+const pageInput    = document.getElementById('sheet-num-input');
+const startBtn     = document.getElementById('start-btn');
+const closeBtn     = document.getElementById('close-btn');
+const resetViewBtn = document.getElementById('reset-view-btn');
+const camLeftBtn   = document.getElementById('cam-left-btn');
+const camRightBtn  = document.getElementById('cam-right-btn');
 
-document.addEventListener("keydown", function(e){
+nextBtn    && nextBtn.addEventListener('click', nextSheet);
+prevBtn    && prevBtn.addEventListener('click', prevSheet);
+goToBtn    && goToBtn.addEventListener('click', () => goToPage(parseInt(pageInput.value)));
 
-    if(e.key == "l"){
-    var lookAt = (new THREE.Vector3( 0, 0, -0.5 )).applyQuaternion( camera.quaternion ).add( camera.position ); //get lookat vector, 0.5 is distance from camera
-    console.log("[" + camera.position.x + "," + camera.position.y + "," + camera.position.z + "],[" + lookAt.x + "," + lookAt.y + "," + lookAt.z,"]")
+// — start button logic (unchanged) -------------------------------------------
+startBtn && startBtn.addEventListener('click', () => {
+  if (window.innerWidth < 1300) {
+    goToCamera(
+      [-1.9153064930837553, 2.361142313198017, 0.07628112775956432],
+      [-1.9153064890826725, 1.8612078653634396, 0.0681849639558673]
+    );
+  } else {
+    goToCamera(
+      [-0.7984355963931029, 2.1458759298750048, 0.030072785196943196],
+      [-0.7984355923920204, 1.6459414820404277, 0.021976621393235994]
+    );
   }
-  
-  
-  if(e.key == "c"){
-  
-    console.log(controls.target)
+
+  // play opening flip (anim 2) once the model is ready
+  if (bookAnim) {
+    mixer.stopAllAction();             // halt anything already running
+    mixer.clipAction(bookAnim[2]).setLoop(THREE.LoopOnce, 1)
+    mixer.clipAction(bookAnim[2]).clampWhenFinished = true;
+    mixer.clipAction(bookAnim[2]).play();
+         
+         
+
   }
 
-  if(e.key=="s"){
-
-    //goToCamera([-0.7984355963931029,2.1458759298750048,0.030072785196943196],[-0.7984355923920204,1.6459414820404277,0.021976621393235994 ])
-  }
+  const rainAudio = document.getElementById('rain-audio');
+  rainAudio && rainAudio.play();
 });
 
+// Optional: close / reset / side cams (left unchanged)
+closeBtn && closeBtn.addEventListener('click', () => {
+  if (!bookAnim) return;
+  ['0', '1', '2'].forEach(i => mixer.clipAction(bookAnim[i]).stop());
+  mixer.clipAction(bookAnim[3]).reset()
+  mixer.clipAction(bookAnim[3]).setLoop(THREE.LoopOnce, 1)
+  mixer.clipAction(bookAnim[3]).clampWhenFinished = true;
+  mixer.clipAction(bookAnim[3]).play();
+       
+       
+
+});
+
+resetViewBtn && resetViewBtn.addEventListener('click', () => {
+  goToCamera(
+    [-0.7984355963931029, 2.1458759298750048, 0.030072785196943196],
+    [-0.7984355923920204, 1.6459414820404277, 0.021976621393235994]
+  );
+});
+
+camLeftBtn && camLeftBtn.addEventListener('click', () => {
+  goToPageCam(
+    [-2, 2.361142313198017, 0.07628112775956432],
+    [-2, 1.8612078653634396, 0.0681849639558673]
+  );
+});
+
+camRightBtn && camRightBtn.addEventListener('click', () => {
+  goToPageCam(
+    [0.04739493044643803, 2.361142313198017, 0.07628112775956432],
+    [0.047394934447520826, 1.862283830461397, 0.0017455764570629556]
+  );
+});
+
+// ------------------------------ LOAD SEQUENCE --------------------------------
+Promise.all([
+  preloadTextures(),
+  new Promise(res => new RGBELoader().setPath('./assets/').load('brown_photostudio_01_2k.hdr', tex => {
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    scene.environment = tex;
+    res();
+  })),
+  new Promise(res => new GLTFLoader().load('./assets/book_flip.gltf', gltf => { buildBook(gltf); res(); }))
+]).then(() => {
+  loadingDiv.style.display = 'none';
+});
+
+// ------------------------------ RENDER LOOP ----------------------------------
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (mixer) mixer.update(clock.getDelta());
+
+  if (tweenEye) tweenEye.update();
+  if (tweenTarget) tweenTarget.update();
+
+  const t = clock.elapsedTime;
+    candleLight.intensity = 1.1 + 0.15 * Math.sin(t * 2.5);
 
 
-//////////////////////////////
-window.addEventListener('resize', function()
-
-{
-var width = window.innerWidth;
-var height = window.innerHeight;
-renderer.setSize( width, height );
-renderer.setPixelRatio( this.window.devicePixelRatio );
-camera.aspect = width / height;
-camera.updateProjectionMatrix();
-} );
-
-
-
-
-
-function animate(time) {
-    requestAnimationFrame( animate );
-    controls.update();
-
-    if (mixer) {
-        mixer.update(0.01); // Update animation with time delta
-    }
-
-    if(tween_eye){
-        
-        tween_eye.update(time)
-        tween_target.update(time)
-     }
-
-
-
-    renderer.getmax
-    renderer.render( scene, camera );
+    if(root){
+    /* 🔹 colour oscillation: map sin() -> 0…1 and mix two RGB colours */
+    const k = 0.5 * (1 + Math.sin(t * 2.5));   // 0‒1 once per second
+    root.getObjectByName("pSphere1").material.color.setRGB(
+    THREE.MathUtils.lerp(0xff / 255, 0xff / 255, k), // R stays 255
+    THREE.MathUtils.lerp(0xb3 / 255, 0xd4 / 255, k), // G: 0xb3→0xd4
+    THREE.MathUtils.lerp(0x3b / 255, 0x5a / 255, k)  // B: 0x3b→0x5a
+    );
+}
     
 
+
+  renderer.render(scene, camera);
 }
 animate();
 
+// ------------------------------ RESIZE ---------------------------------------
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+});
