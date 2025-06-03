@@ -8,6 +8,21 @@
 
 
 
+/* CSS */
+.fade-in {
+  /* Start fully transparent */
+  opacity: 0;
+
+  /* Run the animation once, forward-only */
+  animation: fadeIn 2s ease-out forwards;
+}
+
+/* The keyframes */
+@keyframes fadeIn {
+  to { opacity: 1; }          /* at 100% (or “to”), opacity is fully visible */
+}
+
+
     #threejscanvas {
 
         width: 100vw;
@@ -177,11 +192,18 @@
         }
 </style>
 
+<audio id="track1" src="./assets/audio/1.mp3" preload="auto"></audio>
+<audio id="track2" src="./assets/audio/2.mp3" preload="auto"></audio>
+<audio id="track3" src="./assets/audio/3.mp3" preload="auto"></audio>
+<audio id="track4" src="./assets/audio/4.mp3" preload="auto"></audio>
+<audio id="track5" src="./assets/audio/5.mp3" preload="auto"></audio>
+<audio id="track6" src="./assets/audio/6.mp3" preload="auto"></audio>
+
 
 <canvas id="threejscanvas"  height="100%"></canvas>
 
 <div id="loadingDiv">
-<div class="lds-spinner" style="color:white; font-size: xx-large;">
+<div class="lds-spinner fade-in" style="color:white; font-size: xx-large;">
     مرحبًا بك في هذه التجربة الفريدة، حيث يصبح للقراءة بعدٌ جديدٌ ومميز
     <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
   </div>
@@ -203,7 +225,7 @@
     <button id="close-btn"> إغلاق </button>
 </div>
 
-<audio id="rain-audio" loop src="./assets/rain.mp3"></audio>
+
   
 <script type="importmap">
 

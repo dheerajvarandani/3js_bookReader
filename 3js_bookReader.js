@@ -40,6 +40,8 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.02;
 controls.rotateSpeed   = 0.1;
+controls.maxAzimuthAngle = 1;
+controls.maxPolarAngle = 1;
 
 camera.position.set(-1, 2.25, 6);
 controls.target.set(-1, 1, 1);
@@ -53,6 +55,8 @@ spot.position.set(-5, 4, -3);
 const candleLight = new THREE.PointLight('#ffb36b', 1.2, 20, 0.5); // warm yellow‑orange
 candleLight.position.set(-4.2, 1.8, -1.2);   // initial guess – move as needed
 scene.add(candleLight);
+
+
 
 // visual aid: tiny glowing bulb + helper wireframe
 
@@ -159,6 +163,11 @@ function buildBook(gltf) {
   //applyTexturesForSheet(currentSheet);
 
 
+  mixer.clipAction(bookAnim[4]).setLoop(THREE.LoopRepeat);
+  mixer.clipAction(bookAnim[4]).play();
+
+
+
 }
 
 // ------------------------------ ANIMATION HELPERS ----------------------------
@@ -182,7 +191,9 @@ function playFlip(forward) {
   function animateFlipAndSwap(forward, targetSheet) {
     currentSheet = targetSheet;            // update global index
     applyTexturesForSheet(currentSheet);   // 🟢 swap maps first
-    playFlip(forward);                     // 🟢 then animate
+    playFlip(forward);    
+    const firstPageOfSheet = (currentSheet - 1) * 2 + 1;
+    playAudioForPage(firstPageOfSheet);                 // 🟢 then animate
   }
   
 
@@ -204,6 +215,10 @@ function goToPage(page) {
   const targetSheet = Math.ceil(page / 2);
   currentSheet      = targetSheet;
   applyTexturesForSheet(targetSheet);
+
+  const firstPageOfSheet = (currentSheet - 1) * 2 + 1;
+  playAudioForPage(firstPageOfSheet);
+
 }
 
 // ------------------------------ CAMERA TRANSITIONS ---------------------------
@@ -249,6 +264,45 @@ function goToPageCam(eye, target) {
     .onComplete(() => controls.update())
     .start();
 }
+
+
+//------------------------------- AUDIO ------------------------------------------
+
+const TOTAL_PAGES = 148;
+const NUM_TRACKS  = 6;
+
+/*  split 148 ≈ 24.7 pages per track
+ *  first (TOTAL_PAGES % NUM_TRACKS) tracks get one extra page
+ */
+function buildPageAudioCues() {
+  const cues = [];
+  let page   = 1;
+  for (let i = 1; i <= NUM_TRACKS; i++) {
+    const pagesInThisSlice = Math.ceil((TOTAL_PAGES - cues.length) / (NUM_TRACKS - cues.length));
+    cues.push({
+      start : page,
+      end   : page + pagesInThisSlice - 1,
+      el    : document.getElementById(`track${i}`)
+    });
+    page += pagesInThisSlice;
+  }
+  return cues;
+}
+
+const pageAudioCues = buildPageAudioCues();
+
+function playAudioForPage(page) {
+  pageAudioCues.forEach(cue => {
+    if (page >= cue.start && page <= cue.end) {
+      if (cue.el.paused) cue.el.play();
+    } else {
+      cue.el.pause();
+      cue.el.currentTime = 0;
+    }
+  });
+}
+
+
 
 // ------------------------------ DOM HOOKS ------------------------------------
 const nextBtn      = document.getElementById('next-btn');
@@ -336,9 +390,13 @@ Promise.all([
     scene.environment = tex;
     res();
   })),
-  new Promise(res => new GLTFLoader().load('./assets/book_flip.gltf', gltf => { buildBook(gltf); res(); }))
+  new Promise(res => new GLTFLoader().load('./assets/book_flip3.gltf', gltf => { buildBook(gltf); res(); }))
 ]).then(() => {
-  loadingDiv.style.display = 'none';
+
+  setTimeout(function(){
+    loadingDiv.style.display = 'none';
+  },2000)
+  
 });
 
 // ------------------------------ RENDER LOOP ----------------------------------
