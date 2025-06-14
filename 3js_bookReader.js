@@ -42,6 +42,10 @@ controls.dampingFactor = 0.02;
 controls.rotateSpeed   = 0.1;
 controls.maxAzimuthAngle = 1;
 controls.maxPolarAngle = 1;
+controls.minAzimuthAngle = -1;
+controls.minPolarAngle = 0;
+controls.maxDistance = 5.5;
+
 
 camera.position.set(-1, 2.25, 6);
 controls.target.set(-1, 1, 1);
@@ -252,7 +256,7 @@ function goToPageCam(eye, target) {
     .easing(Easing.Quadratic.InOut)
     .onUpdate(() => {
       camera.position.set(from.x, camera.position.y, camera.position.z);
-      controls.update();
+     // controls.update();
     })
     .start();
 
