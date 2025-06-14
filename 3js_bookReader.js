@@ -83,6 +83,7 @@ const backgroundSphere = new THREE.Mesh(
 backgroundSphere.position.set(0, -175, 0);
 backgroundSphere.rotation.set(0, -4.8, 0);
 backgroundSphere.scale.set(20, 20, 20);
+backgroundSphere.visible = false;
 scene.add(backgroundSphere);
 
 // -------------------------------- TEXTURE PRELOAD ----------------------------
@@ -106,6 +107,7 @@ function preloadTextures() {
           /* 🔹 End config */
   
           textureCache[i] = tex;                    // store in cache
+
         });
       }
     });
@@ -199,6 +201,12 @@ function playFlip(forward) {
     playFlip(forward);    
     const firstPageOfSheet = (currentSheet - 1) * 2 + 1;
     playAudioForPage(firstPageOfSheet);                 // 🟢 then animate
+
+
+
+  
+    document.getElementById("page-left").textContent = firstPageOfSheet  - 1;
+  document.getElementById("page-right").textContent = firstPageOfSheet;
   }
   
 
@@ -223,6 +231,12 @@ function goToPage(page) {
 
   const firstPageOfSheet = (currentSheet - 1) * 2 + 1;
   playAudioForPage(firstPageOfSheet);
+
+
+
+  document.getElementById("page-left").textContent = firstPageOfSheet - 1;
+document.getElementById("page-right").textContent = firstPageOfSheet;
+
 
 }
 
@@ -250,25 +264,28 @@ function goToCamera(eye, target) {
 }
 
 function goToPageCam(eye, target) {
-  const deltaX = eye[0] - camera.position.x;
-  const from   = { x: camera.position.x };
-  tweenEye = new Tween(from)
+  const fromCam = { x: camera.position.x };
+  const fromTarget = { x: controls.target.x };
+
+  tweenEye = new Tween(fromCam)
     .to({ x: eye[0] }, cameraTransitionTime)
     .easing(Easing.Quadratic.InOut)
     .onUpdate(() => {
-      camera.position.set(from.x, camera.position.y, camera.position.z);
-     // controls.update();
+      camera.position.x = fromCam.x;
+      controls.update();
     })
     .start();
 
-  const fromTar = { x: controls.target.x };
-  tweenTarget = new Tween(fromTar)
-    .to({ x: controls.target.x + deltaX }, cameraTransitionTime)
+  tweenTarget = new Tween(fromTarget)
+    .to({ x: target[0] }, cameraTransitionTime)
     .easing(Easing.Quadratic.InOut)
-    .onUpdate(() => controls.target.set(fromTar.x, controls.target.y, controls.target.z))
-    .onComplete(() => controls.update())
+    .onUpdate(() => {
+      controls.target.x = fromTarget.x;
+      controls.update();
+    })
     .start();
 }
+
 
 
 //------------------------------- AUDIO ------------------------------------------
@@ -345,6 +362,9 @@ startBtn && startBtn.addEventListener('click', () => {
     mixer.clipAction(bookAnim[2]).clampWhenFinished = true;
     mixer.clipAction(bookAnim[2]).play();
          
+    const firstPageOfSheet = (currentSheet - 1) * 2 + 1;
+    document.getElementById("page-left").textContent = firstPageOfSheet  - 1;
+  document.getElementById("page-right").textContent = firstPageOfSheet;
          
 
   }
@@ -399,7 +419,8 @@ Promise.all([
 ]).then(() => {
 
   setTimeout(function(){
-    loadingDiv.style.display = 'none';
+    loadingDiv.style.opacity = '0';
+    backgroundSphere.visible = true;
   },2000)
   
 });

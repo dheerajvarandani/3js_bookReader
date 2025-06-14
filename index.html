@@ -6,6 +6,33 @@
     
 <style>
 
+.page-number {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: sans-serif;
+  font-size: 16px;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+#page-right {
+  bottom: 20px;
+  left: 20px;
+}
+
+#page-left {
+  bottom: 20px;
+  right: 20px;
+}
 
 
 /* CSS */
@@ -49,6 +76,7 @@
         width: 100%;
         height: 100%;
         margin: auto;
+        transition: opacity 1s ease-in-out;
         }
 
         .lds-spinner {
@@ -215,6 +243,8 @@
     <button id="next-btn"> < </button>
     <button id="previous-btn"> > </button>
     <button id="cam-right-btn"> -> </button>
+    <div id="page-right" class="page-number">-</div>
+    <div id="page-left" class="page-number">-</div>
 </div>
 
 <div style="position:absolute; bottom: 5vh; left: 0;right: 0; margin:auto;font-size: 15vh; text-align: center;">
