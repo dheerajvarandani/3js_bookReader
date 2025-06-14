@@ -114,6 +114,7 @@ function preloadTextures() {
 // ------------------------------- MODEL + MATERIALS ---------------------------
 let mixer, bookAnim, root;
 let page0Mat, page1Mat, page2Mat, page3Mat;
+let flame;
 let currentSheet = 1;
 
 function applyTexturesForSheet(sheet) {
@@ -159,16 +160,16 @@ function buildBook(gltf) {
   page2Mat = root.getObjectByName('page_1').children[1].material;
   page3Mat = root.getObjectByName('page_2').material;
 
-  
+  flame = root.getObjectByName("flame")
 
 
   scene.add(root);
   mixer = new THREE.AnimationMixer(root);
   //applyTexturesForSheet(currentSheet);
 
-
-  mixer.clipAction(bookAnim[4]).setLoop(THREE.LoopRepeat);
-  mixer.clipAction(bookAnim[4]).play();
+      //candle flame
+  //mixer.clipAction(bookAnim[4]).setLoop(THREE.LoopRepeat);
+  //mixer.clipAction(bookAnim[4]).play();
 
 
 
@@ -404,6 +405,9 @@ Promise.all([
 });
 
 // ------------------------------ RENDER LOOP ----------------------------------
+
+var time = 0;
+
 const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
@@ -417,6 +421,7 @@ function animate() {
     candleLight.intensity = 1.1 + 0.15 * Math.sin(t * 2.5);
 
 
+
     if(root){
     /* 🔹 colour oscillation: map sin() -> 0…1 and mix two RGB colours */
     const k = 0.5 * (1 + Math.sin(t * 2.5));   // 0‒1 once per second
@@ -425,6 +430,13 @@ function animate() {
     THREE.MathUtils.lerp(0xb3 / 255, 0xd4 / 255, k), // G: 0xb3→0xd4
     THREE.MathUtils.lerp(0x3b / 255, 0x5a / 255, k)  // B: 0x3b→0x5a
     );
+
+    time += 0.02; // adjust this for speed
+
+    // Use sin and cos to create a subtle sway in two directions
+    flame.rotation.x = Math.sin(time * 1.5) * 0.3; // sway on X axis
+    flame.rotation.z = Math.cos(time) * 0.3;       // sway on Z axis
+    flame.rotation.y = Math.cos(time) * 0.3;       // sway on Z axis
 }
     
 
