@@ -137,6 +137,7 @@ function buildBook(gltf) {
   root = gltf.scene;
   bookAnim   = gltf.animations;
 
+  console.log(bookAnim)
       var pages = [root.getObjectByName("page_0"),
       root.getObjectByName("page_1").children[2],
       root.getObjectByName("page_1").children[1],
@@ -415,7 +416,7 @@ Promise.all([
     scene.environment = tex;
     res();
   })),
-  new Promise(res => new GLTFLoader().load('./assets/book_flip3.gltf', gltf => { buildBook(gltf); res(); }))
+  new Promise(res => new GLTFLoader().load('./assets/book_flip4.gltf', gltf => { buildBook(gltf); res(); }))
 ]).then(() => {
 
   setTimeout(function(){
@@ -454,10 +455,13 @@ function animate() {
 
     time += 0.02; // adjust this for speed
 
+    if(flame){
     // Use sin and cos to create a subtle sway in two directions
     flame.rotation.x = Math.sin(time * 1.5) * 0.3; // sway on X axis
     flame.rotation.z = Math.cos(time) * 0.3;       // sway on Z axis
     flame.rotation.y = Math.cos(time) * 0.3;       // sway on Z axis
+
+  }
 }
     
 
