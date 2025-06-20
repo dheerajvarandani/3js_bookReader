@@ -421,6 +421,8 @@ Promise.all([
 
   setTimeout(function(){
     loadingDiv.style.opacity = '0';
+
+    
     backgroundSphere.visible = true;
   },2000)
   
