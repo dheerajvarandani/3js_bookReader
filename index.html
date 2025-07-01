@@ -1,6 +1,19 @@
 <html>
 
-<head></head>
+<head>
+    <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
+    crossorigin="anonymous"
+  />
+</head>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+  crossorigin="anonymous"
+></script>
 
 <body>
     
@@ -69,7 +82,7 @@
         border-radius: 2em;
     }
 
-    
+
    /* LOADING SPINNER */
 
         #loadingDiv{
@@ -232,6 +245,7 @@
 <audio id="track6" src="./assets/audio/6.mp3" preload="auto"></audio>
 
 
+
 <canvas id="threejscanvas"  height="100%"></canvas>
 
 <div id="loadingDiv">
@@ -243,20 +257,23 @@
 
 <div style="position:absolute; top: 2vh; left: 0;right: 0; margin:auto;font-size: 15vh; text-align: center;">
 
-    <button id="cam-left-btn"> <- </button>
-    <button id="next-btn"> < </button>
-    <button id="previous-btn"> > </button>
-    <button id="cam-right-btn"> -> </button>
+    <button class="btn btn-light" id="cam-left-btn"> <- </button>
+    <button class="btn btn-light" id="next-btn"> < </button>
+    <button class="btn btn-light" id="previous-btn"> > </button>
+    <button class="btn btn-light" id="cam-right-btn"> -> </button>
     <div id="page-right" class="page-number">-</div>
     <div id="page-left" class="page-number">-</div>
 </div>
 
-<div style="position:absolute; bottom: 5vh; left: 0;right: 0; margin:auto;font-size: 15vh; text-align: center;">
-    <input id="sheet-num-input" type="number">
-    <button id="go-to-btn"> انتقل إلى الصفحة</button>
-    <button id="start-btn"> بدء </button>
-    <button id="reset-view-btn"> إعادة ضبط العرض </button>
-    <button id="close-btn"> إغلاق </button>
+<div
+  class="position-absolute bottom-0 start-50 translate-middle-x mb-5
+         d-flex justify-content-center align-items-center gap-2">
+  <input id="sheet-num-input" type="number"
+         class="form-control w-auto" style="width:100px">
+  <button class="btn btn-light" id="go-to-btn">انتقل إلى الصفحة</button>
+  <button class="btn btn-light" id="start-btn">بدء</button>
+  <button class="btn btn-light w-auto" id="reset-view-btn">إعادة ضبط العرض</button>
+  <button class="btn btn-light" id="close-btn">إغلاق</button>
 </div>
 
 

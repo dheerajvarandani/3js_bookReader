@@ -133,6 +133,12 @@ function applyTexturesForSheet(sheet) {
   });
 }
 
+// create one shared material so it’s only allocated once
+const whiteBasic = new THREE.MeshBasicMaterial({
+  color: 0xffffff,          // pure white
+  name:  'frontCover_basic' // optional label
+});
+
 function buildBook(gltf) {
   root = gltf.scene;
   bookAnim   = gltf.animations;
@@ -166,7 +172,15 @@ function buildBook(gltf) {
   flame = root.getObjectByName("flame")
 
 
+  const frontCover = gltf.scene.getObjectByName('frontCover_2');
+  frontCover.material = whiteBasic;
+  const backCover = gltf.scene.getObjectByName('backCover_2');
+  backCover.material = whiteBasic;
+
+
+
   scene.add(root);
+  console.log(root.getObjectByName("backCover"))
   mixer = new THREE.AnimationMixer(root);
   //applyTexturesForSheet(currentSheet);
 
@@ -416,7 +430,7 @@ Promise.all([
     scene.environment = tex;
     res();
   })),
-  new Promise(res => new GLTFLoader().load('./assets/book_flip4.gltf', gltf => { buildBook(gltf); res(); }))
+  new Promise(res => new GLTFLoader().load('./assets/book_flip5.gltf', gltf => { buildBook(gltf); res(); }))
 ]).then(() => {
 
   setTimeout(function(){
