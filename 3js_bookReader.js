@@ -17,7 +17,7 @@ import { Tween, Easing }       from './tween/tween.esm.js';
 // ‑‑‑‑‑‑‑‑‑‑ GLOBAL CONSTANTS --------------------------------------------------
 const NUM_PAGES   = 148;
 const NUM_SHEETS  = NUM_PAGES / 2;     // 74
-const cameraTransitionTime = 2000;     // ms
+const cameraTransitionTime = 4000;     // ms
 
 // Cache for ALL page textures
 const textureCache = Object.create(null);
@@ -198,6 +198,7 @@ function playFlip(forward) {
     const action  = mixer.clipAction(bookAnim[clipIdx]);
   
     mixer.stopAllAction();             // halt anything already running
+    action.timeScale = 0.4
     action.reset();
     action.setLoop(THREE.LoopOnce, 1);
     action.clampWhenFinished = true;
@@ -374,6 +375,7 @@ startBtn && startBtn.addEventListener('click', () => {
   if (bookAnim) {
     mixer.stopAllAction();             // halt anything already running
     mixer.clipAction(bookAnim[2]).setLoop(THREE.LoopOnce, 1)
+    mixer.clipAction(bookAnim[2]).timeScale = 0.4
     mixer.clipAction(bookAnim[2]).clampWhenFinished = true;
     mixer.clipAction(bookAnim[2]).play();
          
@@ -393,6 +395,7 @@ closeBtn && closeBtn.addEventListener('click', () => {
   if (!bookAnim) return;
   ['0', '1', '2'].forEach(i => mixer.clipAction(bookAnim[i]).stop());
   mixer.clipAction(bookAnim[3]).reset()
+  mixer.clipAction(bookAnim[3]).timeScale = 0.4
   mixer.clipAction(bookAnim[3]).setLoop(THREE.LoopOnce, 1)
   mixer.clipAction(bookAnim[3]).clampWhenFinished = true;
   mixer.clipAction(bookAnim[3]).play();
